@@ -62,15 +62,11 @@ class MongoConnectionPool:
     def getMongodb(
         self, collectionName, isActive=False, identifierName=None, identifierValue=None
     ):
-        print('in mongo')
         # self.__mongodbLogin__()
         self.db, self.client = self.get_connection()
         if (self.client is not None) and (self.db is not None):
             try:
-                st = time.time()
                 collection = self.db[collectionName]
-                st1 = time.time()
-                print('getting collection: ', st1 - st)
                 filterQuery = dict()
                 if identifierName and isinstance(identifierValue, list):
                     filterQuery = {identifierName: {"$in": identifierValue}}
@@ -94,33 +90,22 @@ class MongoConnectionPool:
                     if identifierName == "_id":
                         identifierValue = ObjectId(identifierValue)
                     filterQuery = {identifierName: identifierValue, "isActive": True}
-                st2 = time.time()
-                print('creating filter query: ', st2-st1)
                 if not filterQuery:
                     documents = collection.find()
                 else:
                     documents = collection.find(filterQuery)
-                st3 = time.time()
-                print('fetching documents: ', st3 - st2)
-                print(sys.getsizeof(documents))
                 if documents:
                     result = list(documents)
                 else:
                     result = []
-                print(sys.getsizeof(result))
                 st4 = time.time()
-                print('convert to list: ', st4 - st3)
                 self.__convertObjectIdsToStr__(result)
-                print('covert object id to str recursive call: ', time.time() - st4)
-                print('result: ', sys.getsizeof(result))
                 return result
             except Exception as e:
-                print(f"An error occurred while fetching documents: {e}")
                 return None
             finally:
                 self.return_connection([self.db, self.client])
         else:
-            print("Unable to reach mongodb server")
             return None
 
 

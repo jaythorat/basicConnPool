@@ -40,6 +40,7 @@ class ParseEnviron:
         elif "multipart/form-data" in self.getContentType():
             return self.getParsedWsgiInputInForm()
 
+        # return self.getParsedWsgiInputInJson()
         return None
 
     def getFileInput(self):

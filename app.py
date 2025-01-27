@@ -6,7 +6,7 @@ import json
 
 from mongoCalls import MongodbModel
 sqlConnPool = MysqlConnectionPool()
-mongoPool = MongoConnectionPool()
+# mongoPool = MongoConnectionPool()
 
 
 class WsgiApp:
@@ -17,9 +17,14 @@ class WsgiApp:
     def processRequestData(self, environ):
         pe = Pe(environ)
         url = pe.getUrl()
+        return url
         requestHeaders = pe.getRequestHeaders()
+        # print(requestHeaders)
         if "CONTENT_TYPE" in requestHeaders:
+            # print("blalblablalbabl")
             postData = pe.getPostData()
+            # print("1:2 ",postData)
+            # print("1:444 ",pe.getPostData())
             fileInput = pe.getFileInput()
         else:
             postData = {}
@@ -74,21 +79,27 @@ def getDataFromSql(procName,procParams):
         response = [{k: v for k, v in i.items() if k not in ('createdAt', 'updatedAt')} for i in response]
     return response   
 
-def getDataFromMongo(procName,procParams):
-    # mongoPool.getMongodb()
-    if procName == "getAllActiveData":
-        return mongoPool.getMongodb(procParams[0],procParams[1])
-    elif procName == "getAllData":
-        return mongoPool.getMongodb(procParams[0])
-    elif procName == "getDataById":
-        return mongoPool.getMongodb(procParams[0],procParams[1],procParams[2],procParams[3])
-    elif procName == "getAllData":
-        return mongoPool.getMongodb(procParams[0])
-    elif procName == "getActiveDataById":
-        return mongoPool.getMongodb(procParams[0],procParams[1],procParams[2],procParams[3])
-    elif procName == "checkEntityExists":
-        return mongoPool.getMongodb(procParams[0],procParams[1],procParams[2],procParams[3])
-    return None
+def commitDataToSql(proCName, procParams): 
+    response = sqlConnPool.commitDataToSql(proCName, procParams)
+    if response:
+        return response 
+    else: return []
+
+# def getDataFromMongo(procName,procParams):
+#     # mongoPool.getMongodb()
+#     if procName == "getAllActiveData":
+#         return mongoPool.getMongodb(procParams[0],procParams[1])
+#     elif procName == "getAllData":
+#         return mongoPool.getMongodb(procParams[0])
+#     elif procName == "getDataById":
+#         return mongoPool.getMongodb(procParams[0],procParams[1],procParams[2],procParams[3])
+#     elif procName == "getAllData":
+#         return mongoPool.getMongodb(procParams[0])
+#     elif procName == "getActiveDataById":
+#         return mongoPool.getMongodb(procParams[0],procParams[1],procParams[2],procParams[3])
+#     elif procName == "checkEntityExists":
+#         return mongoPool.getMongodb(procParams[0],procParams[1],procParams[2],procParams[3])
+#     return None
         
 
 def app(environ, start_response):
@@ -99,14 +110,20 @@ def app(environ, start_response):
         "responseHeaders": {}
     }
     wsgiapp = WsgiApp()
-    url, requestHeaders, postData, fileInput = wsgiapp.processRequestData(environ)
-    if 'mysql' in url:
+    url = wsgiapp.processRequestData(environ)
+    # url = "mysql"
+    postData = json.loads(environ["wsgi.input"].read().decode("UTF-8"))
+    # print("jay is hererererer : ",postData,url)
+    if 'mysqlget' in url:
         resp["responseBody"] = json.dumps(__convertDatesToStrings__(getDataFromSql(postData["procName"],postData["procParams"])))
-    elif 'mongo' in url:
-        resp["responseBody"] = json.dumps(__convertDatesToStrings__(getDataFromMongo(postData["procName"],postData["procParams"])))
+    elif 'mysqlpost' in url:
+        resp["responseBody"] = json.dumps(__convertDatesToStrings__(commitDataToSql(postData["procName"],postData["procParams"])))
+    # elif 'mongo' in url:`
+    #     resp["responseBody"] = json.dumps(__convertDatesToStrings__(getDataFromMongo(postData["procName"],postData["procParams"])))
     else:
         resp['responseBody'] = []
+    # print(resp["responseBody"])
     statusCode, responseHeaderList, encodeResponse = wsgiapp.processResponse(resp)
     start_response(statusCode, responseHeaderList)
-    print('time yaken: ', time.time() - start)
+    # print('time yaken: ', time.time() - start)
     return [encodeResponse]

@@ -539,11 +539,9 @@ class MongodbModel():
             self.output = None
 
     def getUserDetails(self, data):
-        print(data)
         result = self.__getMongodb__("User", False, "userUUID", data["userUUID"])
         if isinstance(result, list):
             self.output = result
-            print("resultttt", result)
         else:
             self.output = None
 

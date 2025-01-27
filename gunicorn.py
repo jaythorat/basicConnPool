@@ -3,7 +3,7 @@
 # import os
 bind = "0.0.0.0:1234"
 # bind = "unix:/home/jay/codebase/ooefWebsite/ooefWebsite/webapp.sock"
-workers = 13
+workers = 20
 # workers = multiprocessing.cpu_count() * 2 + 1
 # max_requests = 50
 reload = True
