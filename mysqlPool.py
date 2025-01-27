@@ -60,7 +60,6 @@ class MysqlConnectionPool:
                 self.pool.put(self._create_new_connection())
 
     def getDataFromSqlProcedure(self, procedureCall, data, max_retries=3):
-        print('in mysql')
         for attempt in range(max_retries):
             connection = None
             try:
@@ -80,8 +79,6 @@ class MysqlConnectionPool:
             #         self.setError(1215, f'Database operation failed after {max_retries} attempts: {str(e)}')
             #         return None
             except Exception as e:
-                print(f"Unexpected error: {str(e)}")
-                print(f'Unexpected error: {str(e)}')
                 return None
             finally:
                 if connection:
@@ -89,8 +86,7 @@ class MysqlConnectionPool:
                         # connection.close()
                         self.return_connection(connection)
                     except Exception as e:
-                        print(f"Error closing connection: {str(e)}")
-        
+                        print()
         print('Unable to connect to SQL Server after multiple attempts')
         return None
 

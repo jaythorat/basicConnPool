@@ -4,7 +4,7 @@ sqlPort = 3306
 sqlUser = "ooefWebsiteApi"
 sqlPassword = "3NB0h2DCCr"
 sqlDatabase = "ooefWebsite"
-connectionPoolSize = 5
+connectionPoolSize = 3
 
 # Mongo DB Credentials
 mongoHost = "65.0.147.212"

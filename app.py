@@ -5,7 +5,7 @@ from parseEnviron import ParseEnviron as Pe
 import json
 
 from mongoCalls import MongodbModel
-sqlConnPool = MysqlConnectionPool()
+# sqlConnPool = MysqlConnectionPool()
 mongoPool = MongoConnectionPool()
 
 
@@ -68,11 +68,11 @@ def __convertDatesToStrings__(data):
             ]
         return data
 
-def getDataFromSql(procName,procParams):
-    response = sqlConnPool.getDataFromSqlProcedure(procName,procParams)
-    if response:
-        response = [{k: v for k, v in i.items() if k not in ('createdAt', 'updatedAt')} for i in response]
-    return response   
+# def getDataFromSql(procName,procParams):
+#     response = sqlConnPool.getDataFromSqlProcedure(procName,procParams)
+#     if response:
+#         response = [{k: v for k, v in i.items() if k not in ('createdAt', 'updatedAt')} for i in response]
+#     return response   
 
 def getDataFromMongo(procName,procParams):
     # mongoPool.getMongodb()
@@ -92,21 +92,20 @@ def getDataFromMongo(procName,procParams):
         
 
 def app(environ, start_response):
-    
-    start = time.time()
     resp = {
         "responseCode": 200,
         "responseHeaders": {}
     }
     wsgiapp = WsgiApp()
-    url, requestHeaders, postData, fileInput = wsgiapp.processRequestData(environ)
-    if 'mysql' in url:
-        resp["responseBody"] = json.dumps(__convertDatesToStrings__(getDataFromSql(postData["procName"],postData["procParams"])))
-    elif 'mongo' in url:
+    # url, requestHeaders, postData, fileInput = wsgiapp.processRequestData(environ)
+    url = "mongo"
+    postData = json.loads(environ["wsgi.input"].read().decode("UTF-8"))
+    # if 'mysql' in url:
+    #     resp["responseBody"] = json.dumps(__convertDatesToStrings__(getDataFromSql(postData["procName"],postData["procParams"])))
+    if 'mongo' in url:
         resp["responseBody"] = json.dumps(__convertDatesToStrings__(getDataFromMongo(postData["procName"],postData["procParams"])))
     else:
         resp['responseBody'] = []
     statusCode, responseHeaderList, encodeResponse = wsgiapp.processResponse(resp)
     start_response(statusCode, responseHeaderList)
-    print('time yaken: ', time.time() - start)
     return [encodeResponse]
