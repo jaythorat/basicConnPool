@@ -3,7 +3,7 @@ import json
 from parseEnviron import ParseEnviron as Pe
 from sql.mysqlPool import MysqlConnectionPool
 from sql.sql import SQL
-from utils.utils import JSONDateTimeParserN
+from utils.utils import JSONDateTimeParser
 
 sqlConnPool = MysqlConnectionPool()
 
@@ -27,25 +27,43 @@ class WsgiApp:
         return statusCode, responseHeaderList, encodeResponse
 
 
+def getResponseDataAndStatusCode(url, resp, postData):
+    if "mysqlget" in url:
+        data, status = SQL(sqlConnPool).getDataFromSql(
+            postData["procName"], postData["procParams"]
+        )
+        if status == "SUCCESS":
+            respData = json.dumps(
+                data,
+                cls=JSONDateTimeParser,
+            )
+            return respData, 200
+        elif status == "FAILURE":
+            return json.dumps(data, cls=JSONDateTimeParser), 400
+    elif "mysqlpost" in url:
+
+        data, status = (
+            SQL(sqlConnPool).commitData(postData["procName"], postData["procParams"]),
+        )
+        if status == "SUCCESS":
+            respData = json.dumps(
+                data,
+                cls=JSONDateTimeParser,
+            )
+            return respData, 200
+        elif status == "FAILURE":
+            return json.dumps(data, cls=JSONDateTimeParser), 400
+    else:
+        return json.dumps([], cls=JSONDateTimeParser), 400
+
+
 def app(environ, start_response):
     resp = {"responseCode": 200, "responseHeaders": {}}
     wsgiapp = WsgiApp()
-    url = wsgiapp.processRequestData(environ)
-    postData = json.loads(environ["wsgi.input"].read().decode("UTF-8"))
-    if "mysqlget" in url:
-        resp["responseBody"] = json.dumps(
-            SQL(sqlConnPool).getDataFromSql(
-                postData["procName"], postData["procParams"]
-            ),
-            cls=JSONDateTimeParserN,
-        )
-    elif "mysqlpost" in url:
-        resp["responseBody"] = json.dumps(
-            SQL(sqlConnPool).commitData(postData["procName"], postData["procParams"]),
-            cls=JSONDateTimeParserN,
-        )
-    else:
-        resp["responseBody"] = []
+    url, postData = wsgiapp.processRequestData(environ)
+    resp["responseBody"], resp["responseCode"] = getResponseDataAndStatusCode(
+        url, resp, postData
+    )
     statusCode, responseHeaderList, encodeResponse = wsgiapp.processResponse(resp)
     start_response(statusCode, responseHeaderList)
     return [encodeResponse]

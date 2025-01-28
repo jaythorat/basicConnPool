@@ -75,18 +75,19 @@ class MysqlConnectionPool:
                 for result in cursor.stored_results():
                     values = list(result.fetchone())
                 connection.commit()
-                return values
+
+                return values, "SUCCESS"
             except Exception as e:
                 if "Duplicate" in str(e):
-                    print(f"Requested Entity already exists")
-                    return None
+                    print("Requested Entity already exists")
+                    return None, "FAILURE"
                 else:
                     print(f"Attempt {attempt + 1} failed: {str(e)}")
                     if attempt == max_retries - 1:
                         print(
                             f"Query Execution Failed after {max_retries} attempts: {str(e)}"
                         )
-                        return None
+                        return None, "FAILURE"
             finally:
                 if cursor:
                     try:
@@ -95,12 +96,11 @@ class MysqlConnectionPool:
                         print(f"Error closing cursor: {str(e)}")
                 if connection:
                     try:
-                        # connection.close()
                         self.return_connection(connection)
                     except Exception as e:
                         print(f"Error closing connection: {str(e)}")
 
-        self.setError(1215, "Unable to connect to SQL Server after multiple attempts")
+        print("Unable to connect to SQL Server after multiple attempts")
         return None
 
     def getDataFromSqlProcedure(self, procedureCall, data, max_retries=3):
@@ -109,25 +109,15 @@ class MysqlConnectionPool:
             try:
                 connection = self.get_connection()
                 with connection.cursor(dictionary=True) as cursor:
-                    # cursor.execute("Select * from ProgramView;")
-                    # results = cursor.fetchall()
                     cursor.callproc(procedureCall, data)
                     for result in cursor.stored_results():
                         rows = result.fetchall()
-
-                # return results
-                return rows
-            # except (PoolError, OperationalError) as e:
-            #     logging.error(f"Attempt {attempt + 1} failed: {str(e)}")
-            #     if attempt == max_retries - 1:
-            #         self.setError(1215, f'Database operation failed after {max_retries} attempts: {str(e)}')
-            #         return None
-            except Exception as e:
-                return None
+                return rows, "SUCCESS"
+            except Exception:
+                return None, "FAILURE"
             finally:
                 if connection:
                     try:
-                        # connection.close()
                         self.return_connection(connection)
                     except Exception as e:
                         print(f"Error closing connection: {str(e)}")
