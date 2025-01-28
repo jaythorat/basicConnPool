@@ -55,10 +55,7 @@ class MongoConnectionPool:
         except Empty:
             raise Exception("No available connections in the pool.")
     
-    def getMongodb(
-        self, collectionName, isActive=False, identifierName=None, identifierValue=None
-    ):
-        # self.__mongodbLogin__()
+    def getMongodb(self, collectionName, isActive=False, identifierName=None, identifierValue=None):
         self.db, self.client = self.get_connection()
         if (self.client is not None) and (self.db is not None):
             try:
@@ -94,17 +91,60 @@ class MongoConnectionPool:
                     result = list(documents)
                 else:
                     result = []
-                self.__convertObjectIdsToStr__(result)
-                return result
+                return result, "SUCCESS"
             except Exception as e:
                 print(f"An error occurred while fetching documents: {e}")
-                return None
+                return None, "FAILURE"
             finally:
                 self.return_connection([self.db, self.client])
         else:
             print("Unable to reach mongodb server")
-            return None
+            return None, "FAILURE"
 
+    def createMongodb(self, collectionName, data):
+        self.db, self.client = self.get_connection()
+        if (self.client is not None) and (self.db is not None):
+            try:
+                collection = self.db[collectionName]
+                inserted_id = collection.insert_one(data).inserted_id
+                self.client.close()
+                inserted_id = str(inserted_id)
+                return inserted_id, "SUCCESS"
+            except Exception as e:
+                self.client.close()
+                if "duplicate" in str(e):
+                    print(f"Requested entity already exists")
+                    return None, "FAILURE"
+                else:
+                    print("Mongodb execution failed: " + str(e))
+                    return None, "FAILURE"
+            finally:
+                self.return_connection([self.db, self.client])
+        else:
+            print("Unable to reach mongodb server")
+            return None, "FAILURE"
+
+    def deleteMongodb(self, collectionName, identifierName, identifierValue):
+        self.db, self.client = self.get_connection()
+        if (self.client is not None) and (self.db is not None):
+            try:
+                collection = self.db[collectionName]
+                if identifierName == "_id":
+                    identifierValue = ObjectId(identifierValue)
+                filter_query = {identifierName: identifierValue}
+                deletedCount = collection.delete_one(filter_query).deleted_count
+                self.client.close()
+                return deletedCount, "SUCCESS"
+            except Exception as e:
+                self.client.close()
+                print("Mongodb execution failed: " + str(e))
+                return None, "FAILURE"
+            finally:
+                self.return_connection([self.db, self.client])
+        else:
+            print("Unable to reach mongodb server")
+            return None, "FAILURE"
+        
 
     def return_connection(self, conn):
         """
@@ -119,18 +159,3 @@ class MongoConnectionPool:
         while not self.pool.empty():
             conn = self.pool.get()
             conn.close()
-
-    def __convertObjectIdsToStr__(self, data):
-        if isinstance(data, dict):
-            for key, value in data.items():
-                if isinstance(value, ObjectId):
-                    data[key] = str(value)
-                elif isinstance(value, dict) or isinstance(value, list):
-                    self.__convertObjectIdsToStr__(value)
-        elif isinstance(data, list):
-            for index, item in enumerate(data):
-                if isinstance(item, ObjectId):
-                    data[index] = str(item)
-                elif isinstance(item, dict) or isinstance(item, list):
-                    self.__convertObjectIdsToStr__(item)
-        return data

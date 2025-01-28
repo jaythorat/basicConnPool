@@ -12,7 +12,7 @@ def kill_existing_process(port=1234):
 
 def run_gunicorn(daemon=False):
     kill_existing_process()
-    command = ["gunicorn", "-c", "gunicorn.py", "app:app"]
+    command = ["gunicorn", "-c", "gunicorn.py", "mongoApp:app"]
     if daemon:
         command.append("--daemon")
     print(f"Running command: {' '.join(command)}")
