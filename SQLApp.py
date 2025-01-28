@@ -3,7 +3,7 @@ import json
 from parseEnviron import ParseEnviron as Pe
 from sql.mysqlPool import MysqlConnectionPool
 from sql.sql import SQL
-from utils.utils import __convertDatesToStrings__ as datesToStrings
+from utils.utils import JSONDateTimeParserN
 
 sqlConnPool = MysqlConnectionPool()
 
@@ -34,19 +34,15 @@ def app(environ, start_response):
     postData = json.loads(environ["wsgi.input"].read().decode("UTF-8"))
     if "mysqlget" in url:
         resp["responseBody"] = json.dumps(
-            datesToStrings(
-                SQL(sqlConnPool).getDataFromSql(
-                    postData["procName"], postData["procParams"]
-                )
-            )
+            SQL(sqlConnPool).getDataFromSql(
+                postData["procName"], postData["procParams"]
+            ),
+            cls=JSONDateTimeParserN,
         )
     elif "mysqlpost" in url:
         resp["responseBody"] = json.dumps(
-            datesToStrings(
-                SQL(sqlConnPool).commitData(
-                    postData["procName"], postData["procParams"]
-                )
-            )
+            SQL(sqlConnPool).commitData(postData["procName"], postData["procParams"]),
+            cls=JSONDateTimeParserN,
         )
     else:
         resp["responseBody"] = []
