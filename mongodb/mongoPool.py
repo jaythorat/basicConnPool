@@ -2,11 +2,7 @@ import config
 from pymongo import MongoClient, errors
 from queue import Queue, Empty
 from threading import Lock
-from pymongo import MongoClient, errors
 from bson.objectid import ObjectId
-import sys
-import time
-import json
 
 class MongoConnectionPool:
     def __init__(self):

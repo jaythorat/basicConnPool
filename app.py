@@ -1,13 +1,11 @@
-from mysqlPool import MysqlConnectionPool
-from mongoPool import MongoConnectionPool
-import time
+from sql.mysqlPool import MysqlConnectionPool
+from mongodb.mongoPool import MongoConnectionPool
 from parseEnviron import ParseEnviron as Pe
 import json
 
-from mongoCalls import MongodbModel
-# sqlConnPool = MysqlConnectionPool()
-mongoPool = MongoConnectionPool()
+from mongodb.mongoCalls import MongodbModel
 
+mongoPool = MongoConnectionPool()
 
 class WsgiApp:
 
