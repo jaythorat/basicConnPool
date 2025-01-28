@@ -1,6 +1,8 @@
-import mysql.connector
-from queue import Queue, Empty
+from queue import Empty, Queue
 from threading import Lock
+
+import mysql.connector
+
 import config
 
 
@@ -11,7 +13,7 @@ class MysqlConnectionPool:
         self.sqlUser = config.sqlUser
         self.sqlPassword = config.sqlPassword
         self.sqlDatabase = config.sqlDatabase
-        self.pool_size= config.connectionPoolSize
+        self.pool_size = config.connectionPoolSize
         self.pool = Queue(maxsize=self.pool_size)
         self.lock = Lock()
         self._initialize_pool()
@@ -25,11 +27,11 @@ class MysqlConnectionPool:
     def _create_new_connection(self):
         """Create a new database connection."""
         return mysql.connector.connect(
-                    host=self.sqlHost,
-                    port=self.sqlPort,
-                    user=self.sqlUser,
-                    password=self.sqlPassword,
-                    database=self.sqlDatabase
+            host=self.sqlHost,
+            port=self.sqlPort,
+            user=self.sqlUser,
+            password=self.sqlPassword,
+            database=self.sqlDatabase,
         )
 
     def get_connection(self, timeout=None):
@@ -64,10 +66,10 @@ class MysqlConnectionPool:
             connection = self.get_connection()
             try:
                 if not connection:
-                    raise Exception('Unable to connect to SQL Server')
+                    raise Exception("Unable to connect to SQL Server")
                 cursor = connection.cursor()
                 if not cursor:
-                    raise Exception('Cursor Failed')
+                    raise Exception("Cursor Failed")
                 cursor.callproc(procedureCall, data)
                 values = []
                 for result in cursor.stored_results():
@@ -75,13 +77,15 @@ class MysqlConnectionPool:
                 connection.commit()
                 return values
             except Exception as e:
-                if 'Duplicate' in str(e):
-                    print(f'Requested Entity already exists')
+                if "Duplicate" in str(e):
+                    print(f"Requested Entity already exists")
                     return None
                 else:
                     print(f"Attempt {attempt + 1} failed: {str(e)}")
                     if attempt == max_retries - 1:
-                        print(f'Query Execution Failed after {max_retries} attempts: {str(e)}')
+                        print(
+                            f"Query Execution Failed after {max_retries} attempts: {str(e)}"
+                        )
                         return None
             finally:
                 if cursor:
@@ -96,9 +100,8 @@ class MysqlConnectionPool:
                     except Exception as e:
                         print(f"Error closing connection: {str(e)}")
 
-        self.setError(1215, 'Unable to connect to SQL Server after multiple attempts')
+        self.setError(1215, "Unable to connect to SQL Server after multiple attempts")
         return None
-
 
     def getDataFromSqlProcedure(self, procedureCall, data, max_retries=3):
         for attempt in range(max_retries):
@@ -111,7 +114,7 @@ class MysqlConnectionPool:
                     cursor.callproc(procedureCall, data)
                     for result in cursor.stored_results():
                         rows = result.fetchall()
-                
+
                 # return results
                 return rows
             # except (PoolError, OperationalError) as e:
@@ -128,10 +131,9 @@ class MysqlConnectionPool:
                         self.return_connection(connection)
                     except Exception as e:
                         print(f"Error closing connection: {str(e)}")
-        
-        print('Unable to connect to SQL Server after multiple attempts')
-        return None
 
+        print("Unable to connect to SQL Server after multiple attempts")
+        return None
 
     def close_all_connections(self):
         """Close all connections in the pool."""

@@ -34,14 +34,7 @@ class ParseEnviron:
         ]  # slicing to remove the preceeding `/` in url
 
     def getPostData(self):
-        if "application/json" in self.getContentType():
-            return self.getParsedWsgiInputInJson()
-
-        elif "multipart/form-data" in self.getContentType():
-            return self.getParsedWsgiInputInForm()
-
-        # return self.getParsedWsgiInputInJson()
-        return None
+        return self.getParsedWsgiInputInJson()
 
     def getFileInput(self):
         return {}
@@ -63,4 +56,3 @@ class ParseEnviron:
             return FieldStorage(fp=self.environ["wsgi.input"], environ=self.environ)
         except:
             return {}
-
